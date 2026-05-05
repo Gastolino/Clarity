@@ -535,11 +535,16 @@
     setTimeout(scanAndReplace, 1200);
   });
 
-  // Listen for enable/disable toggle from popup
+  // Listen for enable/disable toggle or replace-all from popup
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'SETTINGS_CHANGED') {
       Object.assign(settings, msg.payload);
       if (settings.enabled) scheduleScan();
+    }
+    if (msg.type === 'REPLACE_ALL') {
+      // Force immediate scan — no debounce
+      clearTimeout(scanTimer);
+      scanAndReplace();
     }
   });
 })();
