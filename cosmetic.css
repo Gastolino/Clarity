@@ -1,0 +1,98 @@
+/*
+ * Clarity – cosmetic.css
+ * Injected at document_start so ads are never painted.
+ * CSS :has() requires Chrome 105+.
+ */
+
+/* ── Google AdSense / Display Network ─────────────────────────────────────── */
+ins.adsbygoogle,
+ins[data-ad-client],
+[data-ad-slot],
+[data-ad-unit-path],
+[data-google-query-id],
+[id^="div-gpt-ad"],
+[id*="google_ads_iframe"],
+[id*="GoogleActiveViewElement"],
+iframe[id^="aswift"],
+iframe[src*="doubleclick.net"],
+iframe[src*="googlesyndication.com"],
+iframe[src*="googleadservices.com"],
+iframe[id^="google_ads_iframe"] { display: none !important; }
+
+/* ── Common ad container class/id patterns ─────────────────────────────────── */
+[id*="ad-container"]:not([id*="no-ad"]),
+[class*="ad-container"]:not([class*="no-ad"]),
+[id*="banner-ad"],    [class*="banner-ad"],
+[id*="ad-banner"],    [class*="ad-banner"],
+[id*="display-ad"],   [class*="display-ad"],
+[id*="advertisement"]:not(section):not(main):not(article),
+[class*="advertisement"]:not([class*="no-ad"]):not(section):not(main),
+[class*="adsbygoogle"],
+.ad-slot, .ad-unit, .dfp-ad, .gpt-ad,
+[aria-label="advertisement" i],
+[data-ad-rendered] { display: none !important; }
+
+/* ── Taboola ───────────────────────────────────────────────────────────────── */
+.trc_rbox_container, .trc_spotlight_item,
+[id^="taboola-"], [class*="taboola"],
+div[id$="-taboola"] { display: none !important; }
+
+/* ── Outbrain ──────────────────────────────────────────────────────────────── */
+.OUTBRAIN, [class*="ob-widget"],
+[data-widget-id^="AR_"],
+[id^="outbrain_widget"] { display: none !important; }
+
+/* ── Twitter / X – Promoted tweets ────────────────────────────────────────── */
+[data-testid="placementTracking"],
+article:has([data-testid="promotedIndicator"]) { display: none !important; }
+
+/* ── Facebook / Instagram – Sponsored posts ───────────────────────────────── */
+[data-pagelet*="FeedUnit"]:has([aria-label="Sponsored" i]),
+[aria-label="Sponsored" i]:not(button) { display: none !important; }
+
+/* ── Pinterest – Sponsored pins (pre-hide; page-hook confirms) ─────────────── */
+[data-test-id="pin"]:has([title="Sponsored" i]),
+[data-test-id="pin"]:has([aria-label*="Sponsored" i]),
+[data-test-id="pin"]:has(video[data-test-id="duplo-hls-video"]),
+[data-clarity-sponsored="true"] { display: none !important; }
+
+/* ── Amazon – Sponsored product placements ─────────────────────────────────── */
+[data-component-type="sp-sponsored-result"],
+[cel_widget_id^="MAIN-FEATURED_ASINS"],
+[data-cel-widget^="sp_detail"],
+.s-sponsored-label-info-icon,
+.puis-sponsored-label-text { display: none !important; }
+
+/* ── Reddit – Promoted posts ───────────────────────────────────────────────── */
+[data-promoted="true"],
+shreddit-ad-post { display: none !important; }
+
+/* ── YouTube – display ads (not pre-rolls, those need different handling) ──── */
+#masthead-ad,
+ytd-display-ad-renderer,
+ytd-promoted-sparkles-web-renderer,
+ytd-promoted-video-renderer,
+ytd-search-pyv-renderer,
+.ytd-promoted-sparkles-text-search-renderer { display: none !important; }
+
+/* ── LinkedIn – Promoted posts ─────────────────────────────────────────────── */
+[data-control-name="promoted_trending_entity_pill"],
+.ad-banner-container,
+[class*="ad-analytics-tracking"] { display: none !important; }
+
+/* ── Generic sponsored/promoted patterns ───────────────────────────────────── */
+[data-testid="promoted"],
+[data-testid="ad"],
+[class*="sponsored-content"]:not([class*="no-ad"]),
+[class*="promoted-content"]:not([class*="no-ad"]),
+[data-type="ad"],
+[data-format="dfp"] { display: none !important; }
+
+/* ── Tracking pixels ───────────────────────────────────────────────────────── */
+img[src*="doubleclick.net"],
+img[src*="googlesyndication.com"],
+img[src*="google-analytics.com/collect"],
+img[src*="facebook.com/tr"],
+img[width="1"][height="1"][src*="track"],
+img[width="1"][height="1"][src*="pixel"],
+img[width="0"][height="0"] { display: none !important; }

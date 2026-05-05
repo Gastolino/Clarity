@@ -1,21 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Clarity",
-  "version": "1.1.0",
-  "description": "Replace ads with your Google Calendar. Stay focused, stay on schedule.",
+  "version": "2.0.0",
+  "description": "Atomic ad blocker. Kills ads at the network, connection, feed, and DOM layer.",
   "permissions": [
     "storage",
-    "identity",
-    "declarativeNetRequest"
+    "declarativeNetRequest",
+    "declarativeNetRequestFeedback",
+    "tabs"
   ],
   "host_permissions": [
-    "<all_urls>",
-    "https://calendar.google.com/*"
+    "<all_urls>"
   ],
   "declarative_net_request": {
     "rule_resources": [
       {
-        "id": "ad_block_rules",
+        "id": "clarity_block",
         "enabled": true,
         "path": "rules.json"
       }
@@ -38,10 +38,7 @@
         "*://*.pinterest.pt/*",
         "*://*.pinterest.com.mx/*",
         "*://*.pinterest.com.au/*",
-        "*://*.pinterest.nz/*",
-        "*://*.pinterest.ru/*",
-        "*://*.pinterest.ch/*",
-        "*://*.pinterest.at/*"
+        "*://*.pinterest.ch/*"
       ],
       "js": ["page-hook.js"],
       "run_at": "document_start",
@@ -50,6 +47,7 @@
     {
       "matches": ["<all_urls>"],
       "js": ["preload-blocker.js"],
+      "css": ["cosmetic.css"],
       "run_at": "document_start"
     },
     {
