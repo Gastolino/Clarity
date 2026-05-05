@@ -315,6 +315,119 @@
     return wrapper;
   }
 
+  // ─── Grey out a single element (manual action) ───────────────────────────────
+
+  function greyOutElement(el) {
+    el.setAttribute(CLARITY_ATTR, 'greyed');
+    el.style.transition = 'filter 0.3s, opacity 0.3s';
+    el.style.filter = 'grayscale(100%) brightness(0.55)';
+    el.style.opacity = '0.5';
+    el.style.pointerEvents = 'none';
+    removeAdjacentLabels(el);
+  }
+
+  // ─── Hover overlay for undetected ads ────────────────────────────────────────
+
+  const hoverBar = document.createElement('div');
+  hoverBar.className = 'clarity-hover-bar';
+  hoverBar.innerHTML = `
+    <button class="clarity-hover-btn" data-action="calendar">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+      Replace with Calendar
+    </button>
+    <button class="clarity-hover-btn clarity-hover-btn-grey" data-action="grey">
+      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+      </svg>
+      Grey out
+    </button>
+  `;
+  document.documentElement.appendChild(hoverBar);
+
+  // Elements that are native page content — never show hover bar on these
+  const NATIVE_TAGS = new Set([
+    'A', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
+    'NAV', 'HEADER', 'FOOTER', 'MAIN', 'ARTICLE', 'ASIDE',
+    'SECTION', 'UL', 'OL', 'LI', 'BUTTON', 'INPUT', 'TEXTAREA',
+    'SELECT', 'LABEL', 'FORM', 'TABLE', 'IMG', 'VIDEO', 'AUDIO',
+    'FIGURE', 'FIGCAPTION', 'BLOCKQUOTE', 'PRE', 'CODE', 'SPAN',
+  ]);
+
+  function isHoverCandidate(el) {
+    if (!el || el === document.documentElement || el === document.body) return false;
+    if (el.hasAttribute(CLARITY_ATTR)) return false;
+    if (el.closest(`.${CLARITY_WRAPPER_CLASS}`)) return false;
+    if (NATIVE_TAGS.has(el.tagName)) return false;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    if (w < 80 || h < 40) return false;
+    // Must be iframe, ins, or a div/section with no substantial text of its own
+    if (el.tagName === 'IFRAME' || el.tagName === 'INS') return true;
+    if (el.tagName === 'DIV' || el.tagName === 'SECTION') {
+      const ownText = Array.from(el.childNodes)
+        .filter((n) => n.nodeType === Node.TEXT_NODE)
+        .map((n) => n.textContent.trim())
+        .join('');
+      return ownText.length < 20;
+    }
+    return false;
+  }
+
+  let hoverTarget = null;
+  let hideTimer = null;
+
+  function positionHoverBar(el) {
+    const rect = el.getBoundingClientRect();
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+    hoverBar.style.top = `${rect.top + scrollY + 8}px`;
+    hoverBar.style.left = `${rect.left + scrollX + 8}px`;
+    hoverBar.style.display = 'flex';
+  }
+
+  document.addEventListener('mouseover', (e) => {
+    if (!settings.enabled) return;
+    const el = e.target.closest('iframe, ins, div, section');
+    if (!el || !isHoverCandidate(el)) return;
+    clearTimeout(hideTimer);
+    hoverTarget = el;
+    positionHoverBar(el);
+  });
+
+  document.addEventListener('mouseout', (e) => {
+    if (!hoverTarget) return;
+    // Don't hide if moving into the bar itself
+    if (hoverBar.contains(e.relatedTarget)) return;
+    hideTimer = setTimeout(() => {
+      hoverBar.style.display = 'none';
+      hoverTarget = null;
+    }, 180);
+  });
+
+  hoverBar.addEventListener('mouseenter', () => clearTimeout(hideTimer));
+
+  hoverBar.addEventListener('mouseleave', () => {
+    hideTimer = setTimeout(() => {
+      hoverBar.style.display = 'none';
+      hoverTarget = null;
+    }, 180);
+  });
+
+  hoverBar.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn || !hoverTarget) return;
+    hoverBar.style.display = 'none';
+    const el = hoverTarget;
+    hoverTarget = null;
+    if (btn.dataset.action === 'calendar') {
+      replaceAdElement(el);
+    } else {
+      greyOutElement(el);
+    }
+  });
+
   // ─── Scan document for ads ────────────────────────────────────────────────────
 
   function scanAndReplace() {
