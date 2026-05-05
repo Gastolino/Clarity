@@ -26,6 +26,28 @@
   },
   "content_scripts": [
     {
+      "matches": [
+        "*://*.pinterest.com/*",
+        "*://*.pinterest.co.uk/*",
+        "*://*.pinterest.fr/*",
+        "*://*.pinterest.de/*",
+        "*://*.pinterest.ca/*",
+        "*://*.pinterest.es/*",
+        "*://*.pinterest.it/*",
+        "*://*.pinterest.jp/*",
+        "*://*.pinterest.pt/*",
+        "*://*.pinterest.com.mx/*",
+        "*://*.pinterest.com.au/*",
+        "*://*.pinterest.nz/*",
+        "*://*.pinterest.ru/*",
+        "*://*.pinterest.ch/*",
+        "*://*.pinterest.at/*"
+      ],
+      "js": ["page-hook.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
       "matches": ["<all_urls>"],
       "js": ["preload-blocker.js"],
       "run_at": "document_start"
