@@ -38,9 +38,8 @@
     '[data-testid*="ad"]',
     '[aria-label="advertisement"]',
     '[aria-label="Advertisement"]',
-    // Pinterest
-    'video[data-test-id="duplo-hls-video"]',
-    '[data-test-id="duplo-hls-video"]',
+    // Note: Pinterest video/sponsored are handled in the site-specific scan pass
+    // because they require findAdContainer() rather than direct replacement.
   ];
 
   // IAB standard banner sizes (w×h) — used to validate size-based detection
@@ -57,6 +56,9 @@
   const CLARITY_ATTR = 'data-clarity-replaced';
   const CLARITY_WRAPPER_CLASS = 'clarity-ad-wrapper';
 
+  // Elements that must never be replaced — page roots and chrome
+  const BLOCKED_IDS = new Set(['__PWS_ROOT__', '__next', 'root', 'app', '__nuxt']);
+
   let settings = { enabled: true, dimMode: null };
   let wrappers = [];
 
@@ -65,19 +67,15 @@
   function getCalendarMode(width, height) {
     if (!width || !height) return 'week';
     const ratio = width / height;
-    // If ratio is between 1/3 and 3 → day view (roughly square-ish)
     if (ratio >= 1 / 3 && ratio <= 3) return 'day';
-    // Very wide (ratio > 5) or very tall (ratio < 0.2) → month
     if (ratio > 5 || ratio < 0.2) return 'month';
-    // Moderately extreme → week
     return 'week';
   }
 
   function getTodayParam() {
     const d = new Date();
     const pad = (n) => String(n).padStart(2, '0');
-    const ymd = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-    return ymd;
+    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
   }
 
   function buildCalendarURL(mode) {
@@ -93,14 +91,11 @@
       showTz: '0',
       mode: mode.toUpperCase(),
     });
-    if (mode === 'day') {
-      params.set('dates', `${today}/${today}`);
-    }
+    if (mode === 'day') params.set('dates', `${today}/${today}`);
     return `${base}?${params.toString()}`;
   }
 
   function removeAdjacentLabels(el) {
-    // Walk siblings and parent's direct children looking for ad labels
     const candidates = [];
     if (el.previousElementSibling) candidates.push(el.previousElementSibling);
     if (el.nextElementSibling) candidates.push(el.nextElementSibling);
@@ -129,7 +124,6 @@
     svg.setAttribute('stroke-linecap', 'round');
     svg.setAttribute('stroke-linejoin', 'round');
     if (open) {
-      // eye open
       const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path1.setAttribute('d', 'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z');
       const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
@@ -139,7 +133,6 @@
       svg.appendChild(path1);
       svg.appendChild(circle);
     } else {
-      // eye closed (slash through)
       const path1 = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path1.setAttribute('d', 'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24');
       const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
@@ -170,17 +163,10 @@
         iframe.style.filter = '';
         iframe.style.opacity = '';
       }
-      // hide labels of dimmed ones
-      if (mode) {
-        w.querySelectorAll('[data-clarity-hidden-label]').forEach((l) => {
-          l.style.display = 'none';
-        });
-      }
     });
   }
 
   function promptDimMode(wrapper) {
-    // Simple in-page modal instead of native confirm (avoids permission issues)
     const overlay = document.createElement('div');
     overlay.className = 'clarity-dim-overlay';
 
@@ -212,7 +198,7 @@
     const close = (mode) => {
       overlay.remove();
       settings.dimMode = mode;
-      chrome.runtime.sendMessage({ type: 'SET_SETTINGS', payload: { dimMode: mode } });
+      chrome.storage.local.set({ dimMode: mode });
       if (mode) applyDimToOthers(wrapper, mode);
     };
 
@@ -222,18 +208,59 @@
     overlay.addEventListener('click', (e) => { if (e.target === overlay) close(null); });
   }
 
+  // ─── Walk up to the real ad container ────────────────────────────────────────
+  // Prefers a semantic data-test-id="pin" ancestor (Pinterest).
+  // Falls back to the first ancestor within a safe size window.
+  // Never returns anything bigger than MAX_W × MAX_H to avoid grabbing page roots.
+
+  const MAX_AD_W = 1200;
+  const MAX_AD_H = 1400;
+
+  function findAdContainer(el) {
+    // Pinterest pin card — exact match, most reliable
+    const pinCard = el.closest('[data-test-id="pin"]');
+    if (pinCard) return pinCard;
+
+    // Generic: walk up, stop at first element with a reasonable ad-like size
+    let node = el.parentElement;
+    while (node && node !== document.body && node !== document.documentElement) {
+      const w = node.offsetWidth;
+      const h = node.offsetHeight;
+      if (w >= 100 && h >= 100 && w <= MAX_AD_W && h <= MAX_AD_H) return node;
+      node = node.parentElement;
+    }
+
+    // Nothing suitable found — return the element itself
+    return el;
+  }
+
   // ─── Replace a single ad element ─────────────────────────────────────────────
+
+  function isSafeToReplace(el) {
+    // Never replace page roots
+    if (el === document.documentElement || el === document.body) return false;
+    if (el.id && BLOCKED_IDS.has(el.id)) return false;
+    if (el.tagName === 'HTML' || el.tagName === 'BODY') return false;
+
+    // Refuse if the element covers more than 60% of the viewport area
+    const vw = window.innerWidth || 1280;
+    const vh = window.innerHeight || 800;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    if (w * h > vw * vh * 0.6) return false;
+
+    return true;
+  }
 
   function replaceAdElement(el) {
     if (el.hasAttribute(CLARITY_ATTR)) return;
     if (el.closest(`.${CLARITY_WRAPPER_CLASS}`)) return;
+    if (!isSafeToReplace(el)) return;
 
-    // Resolve dimensions — use explicit attributes or bounding rect
     const rect = el.getBoundingClientRect();
-    let width = el.offsetWidth || rect.width || parseInt(el.getAttribute('width'), 10) || 0;
-    let height = el.offsetHeight || rect.height || parseInt(el.getAttribute('height'), 10) || 0;
+    const width = el.offsetWidth || rect.width || parseInt(el.getAttribute('width'), 10) || 0;
+    const height = el.offsetHeight || rect.height || parseInt(el.getAttribute('height'), 10) || 0;
 
-    // Skip elements too small to be real ads
     if (width < 60 || height < 30) return;
 
     el.setAttribute(CLARITY_ATTR, '1');
@@ -241,7 +268,6 @@
     const mode = getCalendarMode(width, height);
     const calURL = buildCalendarURL(mode);
 
-    // Build wrapper
     const wrapper = document.createElement('div');
     wrapper.className = CLARITY_WRAPPER_CLASS;
     wrapper.setAttribute('data-clarity-mode', mode);
@@ -255,7 +281,6 @@
       box-shadow: 0 1px 6px rgba(0,0,0,0.12);
     `;
 
-    // Calendar iframe
     const iframe = document.createElement('iframe');
     iframe.className = 'clarity-calendar';
     iframe.src = calURL;
@@ -270,12 +295,10 @@
     `;
     iframe.setAttribute('title', `Clarity – ${mode} calendar`);
 
-    // Mode badge
     const badge = document.createElement('div');
     badge.className = 'clarity-badge';
     badge.textContent = mode;
 
-    // Eye toggle button
     const eyeBtn = document.createElement('button');
     eyeBtn.className = 'clarity-eye-btn';
     eyeBtn.setAttribute('aria-label', 'Toggle banner focus');
@@ -290,9 +313,8 @@
       eyeBtn.appendChild(buildEyeIcon(eyeOpen));
 
       if (eyeOpen) {
-        // Restore all
         settings.dimMode = null;
-        chrome.runtime.sendMessage({ type: 'SET_SETTINGS', payload: { dimMode: null } });
+        chrome.storage.local.set({ dimMode: null });
         applyDimToOthers(wrapper, null);
       } else {
         if (settings.dimMode) {
@@ -307,32 +329,19 @@
     wrapper.appendChild(badge);
     wrapper.appendChild(eyeBtn);
 
-    // Replace original element in DOM
     el.style.display = 'none';
     el.parentNode.insertBefore(wrapper, el);
 
     removeAdjacentLabels(el);
-
     wrappers.push(wrapper);
 
     return wrapper;
   }
 
-  // ─── Walk up to the real ad container ────────────────────────────────────────
-  // Used when we detect a label/child element rather than the outer card itself.
-
-  function findAdContainer(el, minW = 150, minH = 150) {
-    let node = el.parentElement;
-    while (node && node !== document.body) {
-      if (node.offsetWidth >= minW && node.offsetHeight >= minH) return node;
-      node = node.parentElement;
-    }
-    return el;
-  }
-
   // ─── Grey out a single element (manual action) ───────────────────────────────
 
   function greyOutElement(el) {
+    if (!isSafeToReplace(el)) return;
     el.setAttribute(CLARITY_ATTR, 'greyed');
     el.style.transition = 'filter 0.3s, opacity 0.3s';
     el.style.filter = 'grayscale(100%) brightness(0.55)';
@@ -361,7 +370,6 @@
   `;
   document.documentElement.appendChild(hoverBar);
 
-  // Elements that are native page content — never show hover bar on these
   const NATIVE_TAGS = new Set([
     'A', 'P', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6',
     'NAV', 'HEADER', 'FOOTER', 'MAIN', 'ARTICLE', 'ASIDE',
@@ -375,10 +383,10 @@
     if (el.hasAttribute(CLARITY_ATTR)) return false;
     if (el.closest(`.${CLARITY_WRAPPER_CLASS}`)) return false;
     if (NATIVE_TAGS.has(el.tagName)) return false;
+    if (!isSafeToReplace(el)) return false;
     const w = el.offsetWidth;
     const h = el.offsetHeight;
     if (w < 80 || h < 40) return false;
-    // Must be iframe, ins, or a div/section with no substantial text of its own
     if (el.tagName === 'IFRAME' || el.tagName === 'INS') return true;
     if (el.tagName === 'DIV' || el.tagName === 'SECTION') {
       const ownText = Array.from(el.childNodes)
@@ -395,10 +403,8 @@
 
   function positionHoverBar(el) {
     const rect = el.getBoundingClientRect();
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
-    hoverBar.style.top = `${rect.top + scrollY + 8}px`;
-    hoverBar.style.left = `${rect.left + scrollX + 8}px`;
+    hoverBar.style.top = `${rect.top + window.scrollY + 8}px`;
+    hoverBar.style.left = `${rect.left + window.scrollX + 8}px`;
     hoverBar.style.display = 'flex';
   }
 
@@ -413,7 +419,6 @@
 
   document.addEventListener('mouseout', (e) => {
     if (!hoverTarget) return;
-    // Don't hide if moving into the bar itself
     if (hoverBar.contains(e.relatedTarget)) return;
     hideTimer = setTimeout(() => {
       hoverBar.style.display = 'none';
@@ -459,18 +464,16 @@
       });
     });
 
-    // Pinterest: find any element with title="Sponsored" or text "Sponsored"
-    // and replace its closest pin-card ancestor.
+    // Pinterest: sponsored label → find the pin card ancestor
     document.querySelectorAll('[title="Sponsored"], [title="sponsored"]').forEach((label) => {
       const container = findAdContainer(label);
       if (seen.has(container) || container.hasAttribute(CLARITY_ATTR)) return;
       seen.add(container);
-      // Also mark the label so removeAdjacentLabels doesn't need to find it again
       label.setAttribute('data-clarity-hidden-label', '1');
       if (replaceAdElement(container)) count++;
     });
 
-    // Pinterest: video ads — walk up to the pin card
+    // Pinterest: HLS video ad → find the pin card ancestor
     document.querySelectorAll('video[data-test-id="duplo-hls-video"]').forEach((video) => {
       const container = findAdContainer(video);
       if (seen.has(container) || container.hasAttribute(CLARITY_ATTR)) return;
@@ -478,7 +481,7 @@
       if (replaceAdElement(container)) count++;
     });
 
-    // Also scan iframes/divs that match IAB sizes but weren't caught by selectors
+    // IAB size match for anything not caught above
     document.querySelectorAll('div, iframe').forEach((el) => {
       if (seen.has(el) || el.hasAttribute(CLARITY_ATTR)) return;
       const w = el.offsetWidth;
@@ -490,7 +493,9 @@
     });
 
     if (count > 0) {
-      chrome.runtime.sendMessage({ type: 'INCREMENT_COUNT', count });
+      chrome.storage.local.get(['replacedCount'], (data) => {
+        chrome.storage.local.set({ replacedCount: (data.replacedCount || 0) + count });
+      });
     }
   }
 
@@ -499,7 +504,8 @@
   let scanTimer = null;
   function scheduleScan() {
     clearTimeout(scanTimer);
-    scanTimer = setTimeout(scanAndReplace, 400);
+    // 800ms debounce — long enough for SPA hydration bursts to settle
+    scanTimer = setTimeout(scanAndReplace, 800);
   }
 
   const observer = new MutationObserver((mutations) => {
@@ -509,28 +515,31 @@
     if (relevant) scheduleScan();
   });
 
-  // ─── Init ─────────────────────────────────────────────────────────────────────
+  // ─── Init — read settings directly from storage (avoids MV3 service-worker timing) ──
 
-  chrome.runtime.sendMessage({ type: 'GET_SETTINGS' }, (resp) => {
-    if (resp) Object.assign(settings, resp);
-    if (settings.enabled) {
-      scanAndReplace();
-      observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['src', 'data-ad-slot', 'data-ad-client'],
-      });
-    }
+  chrome.storage.local.get(['enabled', 'dimMode'], (data) => {
+    if (data.enabled !== undefined) settings.enabled = data.enabled;
+    if (data.dimMode !== undefined) settings.dimMode = data.dimMode;
+
+    if (!settings.enabled) return;
+
+    observer.observe(document.documentElement, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['src', 'data-ad-slot', 'data-ad-client', 'title'],
+    });
+
+    // Delay first scan so SPA frameworks (Pinterest, etc.) have time to hydrate
+    // before we measure element dimensions and walk the DOM.
+    setTimeout(scanAndReplace, 1200);
   });
 
   // Listen for enable/disable toggle from popup
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'SETTINGS_CHANGED') {
       Object.assign(settings, msg.payload);
-      if (settings.enabled) {
-        scanAndReplace();
-      }
+      if (settings.enabled) scheduleScan();
     }
   });
 })();
