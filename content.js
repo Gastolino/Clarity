@@ -38,6 +38,9 @@
     '[data-testid*="ad"]',
     '[aria-label="advertisement"]',
     '[aria-label="Advertisement"]',
+    // Pinterest
+    'video[data-test-id="duplo-hls-video"]',
+    '[data-test-id="duplo-hls-video"]',
   ];
 
   // IAB standard banner sizes (w×h) — used to validate size-based detection
@@ -315,6 +318,18 @@
     return wrapper;
   }
 
+  // ─── Walk up to the real ad container ────────────────────────────────────────
+  // Used when we detect a label/child element rather than the outer card itself.
+
+  function findAdContainer(el, minW = 150, minH = 150) {
+    let node = el.parentElement;
+    while (node && node !== document.body) {
+      if (node.offsetWidth >= minW && node.offsetHeight >= minH) return node;
+      node = node.parentElement;
+    }
+    return el;
+  }
+
   // ─── Grey out a single element (manual action) ───────────────────────────────
 
   function greyOutElement(el) {
@@ -442,6 +457,25 @@
         seen.add(el);
         if (replaceAdElement(el)) count++;
       });
+    });
+
+    // Pinterest: find any element with title="Sponsored" or text "Sponsored"
+    // and replace its closest pin-card ancestor.
+    document.querySelectorAll('[title="Sponsored"], [title="sponsored"]').forEach((label) => {
+      const container = findAdContainer(label);
+      if (seen.has(container) || container.hasAttribute(CLARITY_ATTR)) return;
+      seen.add(container);
+      // Also mark the label so removeAdjacentLabels doesn't need to find it again
+      label.setAttribute('data-clarity-hidden-label', '1');
+      if (replaceAdElement(container)) count++;
+    });
+
+    // Pinterest: video ads — walk up to the pin card
+    document.querySelectorAll('video[data-test-id="duplo-hls-video"]').forEach((video) => {
+      const container = findAdContainer(video);
+      if (seen.has(container) || container.hasAttribute(CLARITY_ATTR)) return;
+      seen.add(container);
+      if (replaceAdElement(container)) count++;
     });
 
     // Also scan iframes/divs that match IAB sizes but weren't caught by selectors
