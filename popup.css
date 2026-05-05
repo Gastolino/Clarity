@@ -1,0 +1,182 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  color: #1a1a1a;
+  background: #fff;
+  width: 280px;
+  min-height: 100px;
+}
+
+.container {
+  padding: 14px 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────────── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.logo-text {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #1a1a1a;
+}
+
+/* ── Toggle switch ───────────────────────────────────────────────────────────── */
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+  cursor: pointer;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  background: #ccc;
+  border-radius: 22px;
+  transition: background 0.2s;
+}
+
+.slider::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.toggle input:checked + .slider {
+  background: #4285f4;
+}
+
+.toggle input:checked + .slider::before {
+  transform: translateX(16px);
+}
+
+/* ── Stat ────────────────────────────────────────────────────────────────────── */
+.stat-row {
+  background: #f0f4ff;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: #4285f4;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: #666;
+}
+
+/* ── Sections ────────────────────────────────────────────────────────────────── */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #999;
+}
+
+/* ── Threshold table ─────────────────────────────────────────────────────────── */
+.threshold-table {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.threshold-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: #444;
+}
+
+.ratio-badge {
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 72px;
+  text-align: center;
+}
+
+.ratio-day  { background: #e8f0fe; color: #1a73e8; }
+.ratio-week { background: #fef7e0; color: #b06000; }
+.ratio-month{ background: #fce8e6; color: #c5221f; }
+
+/* ── Dim options ─────────────────────────────────────────────────────────────── */
+.dim-options {
+  display: flex;
+  gap: 8px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  color: #444;
+}
+
+.radio-option input {
+  accent-color: #4285f4;
+  cursor: pointer;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 10px;
+  font-size: 11px;
+  color: #aaa;
+  text-align: center;
+}

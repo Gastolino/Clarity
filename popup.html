@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clarity</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="logo">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#4285f4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+        <span class="logo-text">Clarity</span>
+      </div>
+      <label class="toggle" title="Enable or disable Clarity">
+        <input type="checkbox" id="enabledToggle" />
+        <span class="slider"></span>
+      </label>
+    </header>
+
+    <div class="stat-row">
+      <div class="stat">
+        <span class="stat-value" id="replacedCount">0</span>
+        <span class="stat-label">ads replaced today</span>
+      </div>
+    </div>
+
+    <section class="section">
+      <h3 class="section-title">Calendar view thresholds</h3>
+      <div class="threshold-table">
+        <div class="threshold-row">
+          <div class="ratio-badge ratio-day">1:3 – 3:1</div>
+          <span>Day view</span>
+        </div>
+        <div class="threshold-row">
+          <div class="ratio-badge ratio-week">3:1 – 5:1</div>
+          <span>Week view</span>
+        </div>
+        <div class="threshold-row">
+          <div class="ratio-badge ratio-month">&gt; 5:1</div>
+          <span>Month view</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h3 class="section-title">Default dim mode</h3>
+      <div class="dim-options">
+        <label class="radio-option">
+          <input type="radio" name="dimMode" value="" />
+          <span>None</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="dimMode" value="blur" />
+          <span>Blur others</span>
+        </label>
+        <label class="radio-option">
+          <input type="radio" name="dimMode" value="grey" />
+          <span>Grey others</span>
+        </label>
+      </div>
+    </section>
+
+    <footer>
+      <span>Ads replaced with your Google Calendar</span>
+    </footer>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

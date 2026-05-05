@@ -1,0 +1,115 @@
+/* ── Clarity – in-page styles ──────────────────────────────────────────────── */
+
+.clarity-ad-wrapper {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  box-sizing: border-box;
+}
+
+/* ── Eye toggle button ─────────────────────────────────────────────────────── */
+.clarity-eye-btn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 50%;
+  cursor: pointer;
+  color: #444;
+  backdrop-filter: blur(4px);
+  transition: background 0.15s, transform 0.15s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+.clarity-eye-btn:hover {
+  background: rgba(255, 255, 255, 0.97);
+  transform: scale(1.1);
+}
+
+.clarity-eye-btn svg {
+  pointer-events: none;
+}
+
+/* ── Calendar mode badge ───────────────────────────────────────────────────── */
+.clarity-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 8px;
+  z-index: 9999;
+  padding: 2px 7px;
+  background: rgba(66, 133, 244, 0.88);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 10px;
+  pointer-events: none;
+  backdrop-filter: blur(2px);
+}
+
+/* ── Dim-mode prompt overlay ───────────────────────────────────────────────── */
+.clarity-dim-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+.clarity-dim-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px 28px;
+  max-width: 320px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.clarity-dim-box p {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1a1a1a;
+  text-align: center;
+}
+
+.clarity-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #4285f4;
+  color: #fff;
+  transition: background 0.15s;
+  width: 100%;
+}
+
+.clarity-btn:hover {
+  background: #3367d6;
+}
+
+.clarity-btn.clarity-btn-ghost {
+  background: transparent;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.clarity-btn.clarity-btn-ghost:hover {
+  background: #f5f5f5;
+}
