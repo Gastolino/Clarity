@@ -27,6 +27,15 @@
   "content_scripts": [
     {
       "matches": [
+        "*://*.youtube.com/*",
+        "*://youtube.com/*"
+      ],
+      "js": ["youtube.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
         "*://*.pinterest.com/*",
         "*://*.pinterest.co.uk/*",
         "*://*.pinterest.fr/*",
